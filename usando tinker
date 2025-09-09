@@ -1,0 +1,142 @@
+import mysql.connector
+from tkinter import *
+from tkinter import ttk, messagebox
+ 
+def conectar():
+    return mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='aluno.etec',
+        database='Provabd'
+    )
+ 
+def listar_dados(tree):
+    for i in tree.get_children():
+        tree.delete(i)
+    con = conectar()
+    cursor = con.cursor()
+    cursor.execute('SELECT * FROM Artigo')
+    for row in cursor.fetchall():
+        tree.insert('', 'end', values=row)
+    con.close()
+ 
+def janela_artigo():
+    janela = Toplevel()
+    janela.title('Cadastro de Artigo')
+ 
+    Label(janela, text='Código').grid(row=0, column=0)
+    Label(janela, text='Artigo').grid(row=1, column=0)
+    Label(janela, text='Peso').grid(row=2, column=0)
+    Label(janela, text='Preço de Venda').grid(row=3, column=0)
+ 
+    cod_artigo = Entry(janela)
+    nome_artigo = Entry(janela)
+    peso = Entry(janela)
+    preco_venda = Entry(janela)
+ 
+    cod_artigo.grid(row=0, column=1)
+    nome_artigo.grid(row=1, column=1)
+    peso.grid(row=2, column=1)
+    preco_venda.grid(row=3, column=1)
+ 
+    def inserir():
+        try:
+            con = conectar()
+            cursor = con.cursor()
+            cursor.execute('INSERT INTO Artigo (CodArtigos, Artigo, Peso, PrecoVenda) VALUES (%s, %s, %s, %s)',
+                           (cod_artigo.get(), nome_artigo.get(), peso.get(), preco_venda.get()))
+            con.commit()
+            con.close()
+            listar_dados(tree)
+            messagebox.showinfo('Sucesso', 'Artigo cadastrado com sucesso!')
+        except Exception as e:
+            messagebox.showerror('Erro', str(e))
+ 
+    def excluir():
+        try:
+            item = tree.selection()[0]
+            valores = tree.item(item, 'values')
+            con = conectar()
+            cursor = con.cursor()
+            cursor.execute('DELETE FROM Artigo WHERE CodArtigos = %s', (valores[0],))
+            con.commit()
+            con.close()
+            listar_dados(tree)
+            messagebox.showinfo('Sucesso', 'Artigo excluído com sucesso!')
+        except Exception as e:
+            messagebox.showerror('Erro', str(e))
+ 
+    def preencher_campos(event):
+        try:
+            item = tree.selection()[0]
+            valores = tree.item(item, 'values')
+            cod_artigo.delete(0, END)
+            cod_artigo.insert(0, valores[0])
+            nome_artigo.delete(0, END)
+            nome_artigo.insert(0, valores[1])
+            peso.delete(0, END)
+            peso.insert(0, valores[2])
+            preco_venda.delete(0, END)
+            preco_venda.insert(0, valores[3])
+        except:
+            pass
+ 
+    def atualizar():
+        try:
+            con = conectar()
+            cursor = con.cursor()
+            cursor.execute('''
+                UPDATE Artigo
+                SET Artigo = %s, Peso = %s, PrecoVenda = %s
+                WHERE CodArtigos = %s
+            ''', (nome_artigo.get(), peso.get(), preco_venda.get(), cod_artigo.get()))
+            con.commit()
+            con.close()
+            listar_dados(tree)
+            messagebox.showinfo('Sucesso', 'Artigo atualizado com sucesso!')
+        except Exception as e:
+            messagebox.showerror('Erro', str(e))
+ 
+    Button(janela, text='Inserir', command=inserir).grid(row=4, column=0, pady=5)
+    Button(janela, text='Excluir', command=excluir).grid(row=4, column=1, pady=5)
+    Button(janela, text='Atualizar', command=atualizar).grid(row=4, column=2, pady=5)
+ 
+    tree = ttk.Treeview(janela, columns=('CodArtigos', 'Artigo', 'Peso', 'PrecoVenda'), show='headings')
+    for col in ('CodArtigos', 'Artigo', 'Peso', 'PrecoVenda'):
+        tree.heading(col, text=col)
+    tree.grid(row=5, column=0, columnspan=3, pady=10)
+    tree.bind("<<TreeviewSelect>>", preencher_campos)
+ 
+    listar_dados(tree)
+ 
+root = Tk()
+root.title('Sistema Provabd')
+ 
+Button(root, text='Gerenciar Artigos', width=25, command=janela_artigo).pack(pady=10)
+ 
+root.mainloop()
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CREATE DATABASE IF NOT EXISTS Provabd;
+
+USE Provabd;
+
+CREATE TABLE IF NOT EXISTS  Artigo(
+
+CodArtigos	INTEGER,
+
+Artigo			VARCHAR(40)		NOT NULL, 
+
+Peso			CHAR(4)			NOT NULL,
+
+PrecoVenda		char(5)			NOT NULL,
+
+PRIMARY KEY(CODARTIGOS));
+ 
+ 
